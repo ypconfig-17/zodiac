@@ -2,7 +2,7 @@
 
 ## 项目入口与验证
 
-Zodiac 是一个 Java 微服务实验，包含基于 JRaft 的服务注册中心和基于 Netty 的 RPC 调用。注册中心与 RPC 实现分属独立 Maven 模块，示例通过接口和注解表达调用端与服务端的关系。
+Zodiac 是一个 Java 服务注册与 RPC 实验，包含基于 JRaft 的注册中心和基于 Netty 的远程调用。注册中心与 RPC 实现分属独立 Maven 模块，示例通过接口和注解表达调用端与服务端的关系。
 
 - [注册中心](zodiac-server/) 提供注册相关的服务端实现。
 - [RPC 代理](zodiac-rpc/src/main/java/com/tcsl/zodiac/rpc/core/RpcProxy.java) 是阅读客户端代理的入口。
