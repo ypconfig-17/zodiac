@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Zodiac 注册中心服务</title>
+    <link rel="stylesheet" href="layui/css/layui.css" media="all" />
+    <script type="text/javascript" src="layui/layui.js"></script>
+</head>
+<body>
+
+
+
+
+<div id="openProductBox" style="display: none; padding: 10px;">
+    <form class="layui-form" action="">
+    </form>
+    <table id="openProductTable" lay-filter="openProductTable">
+        <h3 style="text-align: center">服务实例列表</h3>
+    </table>
+
+</div>
+
+
+<div class="layui-form-item">
+    <div class="text">
+       zodiac 注册中心
+
+    </div>
+
+<div class="table-box">
+    <table id="outerTablle" lay-filter="opration"></table>
+</div>
+
+</div>
+
+
+<script type="text/html" id="outerBar">
+    <a class="layui-btn layui-btn-normal layui-btn-xs" lay-event="detail">查看</a>
+</script>
+
+
+
+
+<script>
+    layui.use([ 'form', 'layer', 'table','upload' ], function () {
+        var table = layui.table, $ = layui.$, form = layui.form,upload = layui.upload;
+
+
+        form.on('submit(query-openProductBox-filter)', function (data) {
+            var datas = data.field;
+            var parameters = datas.parameters;
+            var status = datas.status;
+            table.reload('openProductTable',{
+                method: 'post',
+                url: "/limiter/resource/getResourceList",
+                where:{
+                    status:status,
+                    parameters:parameters
+                },
+            },true)
+            return false;
+        });
+
+        form.on('submit(query-filter)', function (data) {
+            var datas = data.field;
+            var project = datas.project;
+            var resource = datas.resource;
+            layui.table.reload('outerTablle',{
+                method: 'post',
+                url: "/limiter/resource/getProjectList",
+                page: {
+                    curr: 1
+                }
+                , where:data.field
+            })
+            return false;
+        });
+
+
+
+        //第一个实例
+        var resourceTable =  table.render({
+            elem: '#outerTablle',
+            id:'outerTablle',
+            height: 800,
+            method:'post',
+            toolbar: true,//开启工具栏，此处显示默认图标，可以自定义模板，详见文档
+            totalRow: true, //开启合计行
+            cellMinWidth: 80,
+            url: "/zodiac/apps/getAppInfos",
+            request: {
+                pageName: 'page' //页码的参数名称，默认：page
+                ,limitName: 'size' //每页数据量的参数名，默认：limit
+            },
+            page: { //支持传入 laypage 组件的所有参数（某些参数除外，如：jump/elem） - 详见文档
+                layout: ['limit', 'count', 'prev', 'page', 'next'] //自定义分页布局
+                ,groups: 3 //只显示 3 个连续页码
+                ,first: '首页' //首页
+                ,prev: '上一页'
+                ,next: '下一页'
+                ,last: '尾页' //尾页
+                ,limit:5
+                ,limits:[5,10,20,30]
+            },
+            parseData: function(res){ //res 即为原始返回的数据
+                return {
+                    "code": 0, //解析接口状态
+                    "msg": "", //解析提示文本
+                    "count": res.total, //解析数据长度
+                    "data": res //解析数据列表
+                };
+            },
+            cols: [ [ //表头
+                {field: 'zizeng', title: '序号', sort: true,type:'numbers',fixed: 'left',width:55 }
+                , {field: 'appName', title: '服务名称', sort: true, }
+                , {field: 'groupName', title: '分组名称',sort: true,}
+                , {field: 'instanceCount', title: '实例数',sort: true,}
+                , {field: 'healthInstanceCount', title: '健康实例数',sort: true,}
+                , {field: 'remark', title: '备注'}
+                , {fixed: 'right', align: 'center', toolbar: '#outerBar'}
+            ]]
+        });
+        //监听行工具事件
+        table.on('tool(opration)', function (obj) { //注：tool 是工具条事件名，test 是 table 原始容器的属性 lay-filter="对应的值"
+            var data = obj.data; //获得当前行数据
+            var layEvent = obj.event; //获得 lay-event 对应的值（也可以是表头的 event 参数对应的值）
+            if (layEvent === 'detail') {
+                layer.msg('查看操作');
+                newTable(data);
+            }
+        });
+
+        function newTable(data) {
+            var parameters = data.parameters;
+            var appName = data.appName;
+            var title ="服务名称:"+ appName;
+            layer.open({
+                title: title,
+                type: 1,
+                content: $('#openProductBox')
+                , area: ['1300px', '600px'],
+                btn: ["确定"],
+                btn1: function (index) {
+                    layer.close(index);
+                    window.location.reload();
+                },
+
+                success: function () {
+                    table.render({
+                        elem: '#openProductTable',
+                        id: 'openProductTable',
+                        height: 500 ,
+                        totalRow: true, //开启合计行,
+                        cellMinWidth: 80,
+                        url: "/zodiac/apps/getInstances",
+                        method:'post',
+                        where:{
+                            appName:appName
+                        },
+                        parseData: function(res){ //res 即为原始返回的数据
+                            return {
+                                "code": 0, //解析接口状态
+                                "msg": "", //解析提示文本
+                                "data": res //解析数据列表
+                            };
+                        },
+                        cols: [ [ //表头
+                            {field: 'zizeng', title: '序号', sort: true,type:'numbers' ,width:55 }
+                            ,{field: 'instanceId', title: '实例id', sort: true, }
+                            , {field: 'ip', title: 'IP', sort: true, }
+                            , {field: 'port', title: '实例端口', sort: true,width:200 }
+                            , {field: 'remark', title: '备注', sort: true}
+                            ,{field:'onoff', title:'操作', width:85, templet: '#switchTpl', unresize: true}
+
+                        ]]
+                    });
+
+
+                }
+            });
+
+
+        }
+        //监听开关
+        form.on('switch(on-off-filter)', function(obj){
+            var resource = obj.othis.parents('tr').find("td").eq(2).text();
+            var parameters = obj.othis.parents('tr').find("td").eq(3).text();
+            var status = obj.elem.checked;
+
+            if (status == false){
+                layer.confirm('确定要关闭当前服务接口吗？', {btn: ['确定', '取消'], title: "提示"},function (index) {
+                    update(resource,parameters,status);
+                    form.render();
+                    layer.close(index);
+                },  function(){
+                    obj.elem.checked=!status;
+                    form.render();
+                })
+                return false;
+
+            }else{
+                update(resource,parameters,status);
+            }
+
+        });
+
+
+        function update(resource,parameters,status){
+            $.ajax({
+                url: '/limiter/resource/update',
+                type: "POST" ,
+                data:{
+                    "resource":resource,
+                    "parameters":parameters,
+                    "status":status
+                },
+                success: function (data) {
+                    if (data.code == 0){
+                        reloadOpenTable ();
+                        layer.msg("操作成功")
+                    }else{
+                        reloadOpenTable ();
+                        layer.msg("操作失败")
+                    }
+
+                },
+                error:function (data) {
+                    reloadOpenTable ();
+                    layer.msg("操作失败")
+                }
+
+            });
+
+        }
+
+        function  reloadOpenTable (){
+            layui.table.reload('openProductTable',{
+            })
+        }
+
+        //监听头工具栏事件
+        table.on('toolbar(opration)', function (obj) {
+            var checkStatus = table.checkStatus(obj.config.id)
+                , data = checkStatus.data; //获取选中的数据
+            switch (obj.event) {
+                case 'add':
+                    layer.msg('添加');
+                    break;
+                case 'update':
+                    if (data.length === 0) {
+                        layer.msg('请选择一行');
+                    } else if (data.length > 1) {
+                        layer.msg('只能同时编辑一个');
+                    } else {
+                        layer.alert('编辑 [id]：' + checkStatus.data[0].id);
+                    }
+                    break;
+                case 'delete':
+                    if (data.length === 0) {
+                        layer.msg('请选择一行');
+                    } else {
+                        layer.msg('删除');
+                    }
+                    break;
+            }
+            ;
+        });
+    });
+</script>
+</body>
+<style>
+    .table-box{
+        padding: 0 15px;
+    }
+    .text{
+        font-size: 60px;
+        color: #009688;
+        padding: 15px;
+        font-weight: bold;
+    }
+</style>
+</html>
